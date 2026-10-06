@@ -1,0 +1,144 @@
+# PLANTILLA: agregar los cuatro proyectos indicados en LEEME.txt antes de ejecutar.
+name: alumnos-microservicios
+services:
+  productos:
+    image: clase-productos:1.0
+    build:
+      context: ./microservicios/productos  # Carpeta con pom.xml y src.
+      dockerfile: Dockerfile  # Ruta relativa al context, no al endpoint.
+    ports:
+      - "127.0.0.1:8082:8080"
+    environment:
+      SERVER_PORT: 8080
+      SPRING_DATASOURCE_URL: "jdbc:mysql://mysql-productos:3306/productos_db?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC"
+      SPRING_DATASOURCE_USERNAME: demo
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:?Falta DB_PASSWORD en .env}
+    depends_on:
+      mysql-productos:
+        condition: service_healthy
+
+  mysql-productos:
+    image: mysql:8.4
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Falta MYSQL_ROOT_PASSWORD en .env}
+      MYSQL_DATABASE: productos_db
+      MYSQL_USER: demo
+      MYSQL_PASSWORD: ${DB_PASSWORD:?Falta DB_PASSWORD en .env}
+    ports:
+      - "127.0.0.1:3310:3306"
+    volumes:
+      - datos_productos:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "MYSQL_PWD=$$MYSQL_PASSWORD mysql --protocol=TCP -h 127.0.0.1 -u demo productos_db -e 'SELECT 1' > /dev/null 2>&1"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+
+  usuarios:
+    image: clase-usuarios:1.0
+    build:
+      context: ./microservicios/usuarios  # Carpeta con pom.xml y src.
+      dockerfile: Dockerfile  # Ruta relativa al context, no al endpoint.
+    ports:
+      - "127.0.0.1:8083:8080"
+    environment:
+      SERVER_PORT: 8080
+      SPRING_DATASOURCE_URL: "jdbc:mysql://mysql-usuarios:3306/usuarios_db?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC"
+      SPRING_DATASOURCE_USERNAME: demo
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:?Falta DB_PASSWORD en .env}
+    depends_on:
+      mysql-usuarios:
+        condition: service_healthy
+
+  mysql-usuarios:
+    image: mysql:8.4
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Falta MYSQL_ROOT_PASSWORD en .env}
+      MYSQL_DATABASE: usuarios_db
+      MYSQL_USER: demo
+      MYSQL_PASSWORD: ${DB_PASSWORD:?Falta DB_PASSWORD en .env}
+    ports:
+      - "127.0.0.1:3311:3306"
+    volumes:
+      - datos_usuarios:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "MYSQL_PWD=$$MYSQL_PASSWORD mysql --protocol=TCP -h 127.0.0.1 -u demo usuarios_db -e 'SELECT 1' > /dev/null 2>&1"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+
+  pedidos:
+    image: clase-pedidos:1.0
+    build:
+      context: ./microservicios/pedidos  # Carpeta con pom.xml y src.
+      dockerfile: Dockerfile  # Ruta relativa al context, no al endpoint.
+    ports:
+      - "127.0.0.1:8084:8080"
+    environment:
+      SERVER_PORT: 8080
+      SPRING_DATASOURCE_URL: "jdbc:mysql://mysql-pedidos:3306/pedidos_db?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC"
+      SPRING_DATASOURCE_USERNAME: demo
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:?Falta DB_PASSWORD en .env}
+    depends_on:
+      mysql-pedidos:
+        condition: service_healthy
+
+  mysql-pedidos:
+    image: mysql:8.4
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Falta MYSQL_ROOT_PASSWORD en .env}
+      MYSQL_DATABASE: pedidos_db
+      MYSQL_USER: demo
+      MYSQL_PASSWORD: ${DB_PASSWORD:?Falta DB_PASSWORD en .env}
+    ports:
+      - "127.0.0.1:3312:3306"
+    volumes:
+      - datos_pedidos:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "MYSQL_PWD=$$MYSQL_PASSWORD mysql --protocol=TCP -h 127.0.0.1 -u demo pedidos_db -e 'SELECT 1' > /dev/null 2>&1"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+
+  inventario:
+    image: clase-inventario:1.0
+    build:
+      context: ./microservicios/inventario  # Carpeta con pom.xml y src.
+      dockerfile: Dockerfile  # Ruta relativa al context, no al endpoint.
+    ports:
+      - "127.0.0.1:8085:8080"
+    environment:
+      SERVER_PORT: 8080
+      SPRING_DATASOURCE_URL: "jdbc:mysql://mysql-inventario:3306/inventario_db?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC"
+      SPRING_DATASOURCE_USERNAME: demo
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:?Falta DB_PASSWORD en .env}
+    depends_on:
+      mysql-inventario:
+        condition: service_healthy
+
+  mysql-inventario:
+    image: mysql:8.4
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Falta MYSQL_ROOT_PASSWORD en .env}
+      MYSQL_DATABASE: inventario_db
+      MYSQL_USER: demo
+      MYSQL_PASSWORD: ${DB_PASSWORD:?Falta DB_PASSWORD en .env}
+    ports:
+      - "127.0.0.1:3313:3306"
+    volumes:
+      - datos_inventario:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "MYSQL_PWD=$$MYSQL_PASSWORD mysql --protocol=TCP -h 127.0.0.1 -u demo inventario_db -e 'SELECT 1' > /dev/null 2>&1"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+
+volumes:
+  datos_productos:
+  datos_usuarios:
+  datos_pedidos:
+  datos_inventario:

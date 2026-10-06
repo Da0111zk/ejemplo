@@ -1,0 +1,83 @@
+COMPOSE PARA CUATRO O MÁS MICROSERVICIOS — JAVA 21
+
+Esta es una plantilla para los proyectos de los alumnos. No incluye cuatro
+aplicaciones implementadas. Productos, usuarios, pedidos e inventario son nombres
+de ejemplo: cámbialos por los de tu caso. Un endpoint es una ruta HTTP; un
+microservicio puede tener varios endpoints y normalmente tiene un Dockerfile.
+
+1. ORGANIZAR LOS PROYECTOS
+En esta misma carpeta, crear microservicios y colocar dentro cuatro proyectos:
+- microservicios/productos/pom.xml, src/ y Dockerfile
+- microservicios/usuarios/pom.xml, src/ y Dockerfile
+- microservicios/pedidos/pom.xml, src/ y Dockerfile
+- microservicios/inventario/pom.xml, src/ y Dockerfile
+El docker-compose.yml y .env quedan fuera de microservicios, en esta carpeta.
+Puedes usar 03_final como proyecto productos copiando pom.xml y src/.
+Los demás proyectos los aporta cada grupo.
+
+2. PREPARAR CADA DOCKERFILE
+Copiar Dockerfile.ejemplo dentro de cada proyecto con el nombre Dockerfile.
+Copiar .dockerignore.ejemplo como .dockerignore en cada proyecto.
+El ejemplo necesita <finalName>app</finalName> dentro de <build> en cada pom.xml,
+además del plugin spring-boot-maven-plugin para generar el JAR ejecutable.
+No agregar un segundo bloque build: modificar el existente.
+Si conservas otro finalName, cambiar /app/target/app.jar en ese Dockerfile.
+Todos los proyectos deben compilar con java.version=21 para este ejemplo.
+Esta plantilla supone proyectos Maven independientes con pom.xml y src, sin
+módulos hermanos ni dependencias privadas que requieran configuración adicional.
+Maven clean package se ejecuta dentro de Docker; después Java ejecuta el JAR.
+
+3. CÓMO COMPOSE ENCUENTRA CADA DOCKERFILE
+build.context: ./microservicios/productos
+  Selecciona la carpeta del proyecto, relativa a este Compose.
+build.dockerfile: Dockerfile
+  Selecciona el archivo dentro de esa carpeta.
+image: clase-productos:1.0
+  Da nombre y etiqueta a la imagen construida.
+Para un proyecto vecino puedes cambiar context a ../mi-otro-proyecto.
+No escribir una URL como /api/productos en context: debe ser una carpeta.
+
+4. EJECUTAR (TERMINAL EN ESTA CARPETA)
+docker compose config --quiet
+docker compose up -d --build
+docker compose ps
+docker compose logs -f productos
+No necesitas ejecutar Maven previamente ni tener un JAR local.
+Para reconstruir solo un servicio:
+docker compose up -d --build productos
+Para detener conservando las bases: docker compose down
+
+5. PUERTOS Y BASES DE DATOS
+Servicio      API desde Windows      HeidiSQL (host 127.0.0.1)    Base
+productos     http://localhost:8082  3310, demo / Demo123!        productos_db
+usuarios      http://localhost:8083  3311, demo / Demo123!        usuarios_db
+pedidos       http://localhost:8084  3312, demo / Demo123!        pedidos_db
+inventario    http://localhost:8085  3313, demo / Demo123!        inventario_db
+Dentro de Docker todas las APIs escuchan en 8080; cada una es un contenedor distinto.
+Cada API tiene un MySQL y un volumen propio: son ocho contenedores en total.
+Este enfoque facilita separar datos pero consume más memoria que un solo MySQL.
+No ejecutar a la vez este ejemplo y 03_final: ambos publican el puerto 8082.
+La contraseña root inicial es RootDemo123! y las credenciales son solo de clase.
+Cambiar .env no modifica contraseñas de bases ya inicializadas.
+
+6. LLAMADAS ENTRE MICROSERVICIOS
+Desde pedidos, productos está en http://productos:8080 (agregar la ruta real).
+Desde Windows, productos está en http://localhost:8082.
+Dentro del contenedor, localhost se refiere al propio contenedor.
+Compose crea la red, pero NO programa las llamadas HTTP ni adapta JWT.
+Configurar en el código cliente la URL, rutas y autenticación de cada API.
+SPRING_DATASOURCE_* configura Spring Boot; agregar a environment las variables
+JWT u otras que requiera cada proyecto. No se presupone autenticación compartida.
+depends_on espera la base propia, no garantiza que las otras APIs estén listas.
+
+7. AGREGAR UN QUINTO MICROSERVICIO
+Duplicar un bloque de API y su bloque mysql; por ejemplo pagos y mysql-pagos.
+Usar context ./microservicios/pagos, image clase-pagos:1.0 y puerto 8086:8080.
+Cambiar la URL JDBC a mysql-pagos:3306/pagos_db, MYSQL_DATABASE a pagos_db,
+el nombre de base del healthcheck y el depends_on a mysql-pagos.
+Publicar MySQL en 3314:3306 y agregar datos_pagos en volumes.
+Agregar el proyecto pagos con pom.xml, src y su Dockerfile.
+
+REFERENCIAS
+https://docs.docker.com/reference/compose-file/build/
+https://docs.docker.com/build/building/multi-stage/
